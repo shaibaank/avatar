@@ -20,8 +20,11 @@ import sys
 import bpy
 from pathlib import Path
 
-# TODO -- this is needed to find the local module (player) when invoked through Blender. Try to find a better solution.
-sys.path.append("./")
+PROJECT_ROOT = Path(__file__).resolve().parent
+ASSETS_DIR = PROJECT_ROOT / "assets"
+
+# Keep local imports working when Blender is launched from a different cwd.
+sys.path.append(str(PROJECT_ROOT))
 
 from player.mms_parser import MMSParser
 from player.ArmatureUtils import ArmatureOperator
@@ -192,13 +195,17 @@ def post_bake(
     #
     # Set the high quality render configuration
     # BLENDER_EEVEE_NEXT, BLENDER_WORKBENCH, CYCLES
-    bpy.context.scene.render.engine = "BLENDER_EEVEE_NEXT"
+    engine_items = bpy.context.scene.render.bl_rna.properties["engine"].enum_items.keys()
+    if "BLENDER_EEVEE_NEXT" in engine_items:
+        bpy.context.scene.render.engine = "BLENDER_EEVEE_NEXT"
+    else:
+        bpy.context.scene.render.engine = "BLENDER_EEVEE"
     # bpy.context.scene.render.engine = "BLENDER_WORKBENCH"
-    bpy.context.scene.eevee.taa_render_samples = 2
+    bpy.context.scene.eevee.taa_render_samples = 1
     bpy.context.scene.render.resolution_x = render_size_x
     bpy.context.scene.render.resolution_y = render_size_y
     bpy.context.scene.render.resolution_percentage = render_size_pct
-    bpy.context.scene.render.fps = 60
+    bpy.context.scene.render.fps = 30
     bpy.context.scene.render.image_settings.file_format = "FFMPEG"
     # bpy.context.scene.render.image_settings.file_format = 'PNG'
     bpy.context.scene.render.ffmpeg.format = "MPEG4"
@@ -329,8 +336,8 @@ def execute_pipeline(arguments: argparse.Namespace) -> None:
     if arguments.render_sentence:
         glue = Glue(
             mms=mms,
-            ignore_bone_list="./assets/ignorelist.json",
-            src_blendfile="./assets/defaults.blend",
+            ignore_bone_list=str(ASSETS_DIR / "ignorelist.json"),
+            src_blendfile=str(ASSETS_DIR / "defaults.blend"),
             action_name="final_action"
         )
         render_sentence(sentence_id, generated_root, glue, arguments)
@@ -346,7 +353,7 @@ def execute_pipeline(arguments: argparse.Namespace) -> None:
     # The way items are added to the bone list defines the execution order for the
     # ik target.
 
-    config_path = Path("./assets/controller_config.json")
+    config_path = ASSETS_DIR / "controller_config.json"
     if not config_path.exists():
         raise Exception(f"The config '{config_path}' couldn't be located.")
 
@@ -454,8 +461,8 @@ def execute_pipeline(arguments: argparse.Namespace) -> None:
     # Finally we merge individual signs to produce the final utterance of the full sentence.
     print("Merging inflected glosses into the final timeline...")
     glue = Glue(mms=mms,
-                ignore_bone_list="./assets/ignorelist.json",
-                src_blendfile="./assets/defaults.blend",
+                ignore_bone_list=str(ASSETS_DIR / "ignorelist.json"),
+                src_blendfile=str(ASSETS_DIR / "defaults.blend"),
                 action_name="final_action")
     # Since the animation data is essentially empty after initializing a new one,
     # it is necessary to create f-curves that match the source data.

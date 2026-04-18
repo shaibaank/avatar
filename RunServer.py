@@ -31,6 +31,17 @@ CORPUS_DIR = os.getenv("AVASAG_CORPUS_DIR")
 if CORPUS_DIR is None:
     raise Exception("Environment variable AVASAG_CORPUS_DIR is not set.")
 
+PROJECT_ROOT = Path(__file__).resolve().parent
+MAIN_SCRIPT = PROJECT_ROOT / "main.py"
+if not MAIN_SCRIPT.exists():
+    raise Exception(f"Main script '{MAIN_SCRIPT}' not found.")
+
+JSON_EXPORTER_SCRIPT = PROJECT_ROOT / "exporter" / "json_exporter.py"
+if not JSON_EXPORTER_SCRIPT.exists():
+    JSON_EXPORTER_SCRIPT = PROJECT_ROOT / "Docs" / "exporter" / "json_exporter.py"
+if not JSON_EXPORTER_SCRIPT.exists():
+    raise Exception(f"JSON exporter script '{JSON_EXPORTER_SCRIPT}' not found.")
+
 
 GENERATED_CORPUS_PATH = Path(CORPUS_DIR) / "generated"
 
@@ -93,7 +104,7 @@ def generate_json_animation_data(mms_filepath, use_relative_time):
         BLENDER_EXE,
         "--background",
         "--python",
-        "main.py",
+        str(MAIN_SCRIPT),
         "--",
         "--source-mms-file",
         str(mms_filepath),
@@ -105,7 +116,7 @@ def generate_json_animation_data(mms_filepath, use_relative_time):
     if use_relative_time:
         args.extend(["--use-relative-time"])
 
-    p = subprocess.Popen(args)
+    p = subprocess.Popen(args, cwd=str(PROJECT_ROOT))
     p.wait()
 
     if not export_blend_path.exists():
@@ -118,13 +129,14 @@ def generate_json_animation_data(mms_filepath, use_relative_time):
             BLENDER_EXE,
             "--background",
             "--python",
-            "exporter/json_exporter.py",
+            str(JSON_EXPORTER_SCRIPT),
             "--",
             "--blend-path",
             str(export_blend_path),
             "--json-path",
-            json_path,
-        ]
+            str(json_path),
+        ],
+        cwd=str(PROJECT_ROOT),
     )
     # print the stdout from the process
     p.wait()

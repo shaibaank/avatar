@@ -260,3 +260,5 @@ Projects:
 * [SocialWear](https://affective.dfki.de/socialwear-bmbf-2020-2024/) (BMBF, cost action 22132)
 * [AVASAG](https://avasag.de): Avatar-based speech assistant for automatic sign language translation (BMBF, grant number 16SV8491)
 
+#   a v a t a r  
+ 
